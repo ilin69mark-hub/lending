@@ -1,0 +1,21 @@
+
+C:\Users\asus\Desktop\landing
+├── app
+├── components
+├── data
+├── lib
+├── next-env.d.ts
+├── node_modules
+├── package-lock.json
+├── package.json
+├── project_structure.txt
+├── public
+├── structure.txt
+├── styles
+└── tsconfig.json
+
+directory: 7 file: 6
+
+
+
+[2K[1G

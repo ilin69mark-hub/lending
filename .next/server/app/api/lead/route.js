@@ -1,0 +1,7 @@
+"use strict";(()=>{var e={};e.id=558,e.ids=[558],e.modules={517:e=>{e.exports=require("next/dist/compiled/next-server/app-route.runtime.prod.js")},5194:(e,t,a)=>{a.r(t),a.d(t,{headerHooks:()=>u,originalPathname:()=>l,requestAsyncStorage:()=>i,routeModule:()=>n,serverHooks:()=>d,staticGenerationAsyncStorage:()=>p,staticGenerationBailout:()=>c});var o={};a.r(o),a.d(o,{POST:()=>POST}),a(8976);var s=a(884),r=a(6132);async function POST(e){let t=await e.json(),a=`
+Новая заявка:
+Имя: ${t.name}
+Город: ${t.city}
+Телефон: ${t.phone}
+Причина: ${t.reason}
+`;return await fetch(`https://api.telegram.org/bot${process.env.TG_TOKEN}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:process.env.TG_CHAT_ID,text:a})}),await fetch(process.env.MAX_WEBHOOK_URL,{method:"POST",body:JSON.stringify(t),headers:{"Content-Type":"application/json"}}),Response.json({success:!0})}let n=new s.AppRouteRouteModule({definition:{kind:r.x.APP_ROUTE,page:"/api/lead/route",pathname:"/api/lead",filename:"route",bundlePath:"app/api/lead/route"},resolvedPagePath:"C:\\Users\\asus\\Desktop\\landing\\app\\api\\lead\\route.ts",nextConfigOutput:"",userland:o}),{requestAsyncStorage:i,staticGenerationAsyncStorage:p,serverHooks:d,headerHooks:u,staticGenerationBailout:c}=n,l="/api/lead/route"}};var t=require("../../../webpack-runtime.js");t.C(e);var __webpack_exec__=e=>t(t.s=e),a=t.X(0,[364],()=>__webpack_exec__(5194));module.exports=a})();
