@@ -1,3 +1,6 @@
+/* app/layout.tsx --------------------------------------------------- */
+import "./globals.css";               // <‑‑ подключаем стили
+
 export const metadata = {
   title: "ivan.ru",
   description: "Франшиза ivan.ru",
@@ -10,7 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru">
-      <body>{children}</body>
+      <head />
+      {/* При необходимости можно добавить <title> и <meta> */}
+      <body className="bg-white text-gray-900 antialiased">
+        {children}
+      </body>
     </html>
   );
 }
