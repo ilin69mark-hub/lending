@@ -1,92 +1,120 @@
-// app/api/lead/route.ts
+import fs from "fs";
+import path from "path";
 import { NextResponse } from "next/server";
 
-/**
- * Ожидаем тело:
- * {
- *   "name": "Имя",
- *   "phone": "Телефон",
- *   "city": "Город"
- * }
- */
+const DATA_DIR = path.join(process.cwd(), "data");
+const LEADS_FILE = path.join(DATA_DIR, "leads.json");
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// Initialize leads file if not exists
+if (!fs.existsSync(LEADS_FILE)) {
+  fs.writeFileSync(LEADS_FILE, JSON.stringify([], null, 2));
+}
+
+function readLeads() {
+  try {
+    const data = fs.readFileSync(LEADS_FILE, "utf-8");
+    return JSON.parse(data);
+  } catch (e) {
+    return [];
+  }
+}
+
+function writeLeads(leads: any[]) {
+  fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+}
+
 export async function POST(req: Request) {
-  // 1️⃣ Читаем тело
-  let payload: { name?: string; phone?: string; city?: string };
+  let payload: { name?: string; phone?: string; city?: string; reason?: string };
+
   try {
     payload = await req.json();
   } catch (e) {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { name, phone, city, reason } = payload;
+
+  if (!name || !phone || !city) {
     return NextResponse.json(
-      { error: "Invalid JSON" },
+      { error: "Missing required fields" },
       { status: 400 }
     );
   }
 
-  const { name, phone, city } = payload;
-
-  // 2️⃣ Простейшая валидация
-  if (!name || !phone) {
+  // Validate phone
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (phoneDigits.length < 11) {
     return NextResponse.json(
-      { error: "Missing name or phone" },
+      { error: "Invalid phone number" },
       { status: 400 }
     );
   }
 
-  // 3️⃣ Получаем переменные окружения
-  const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-  const CHAT_ID   = process.env.TELEGRAM_CHAT_ID;
+  try {
+    const leads = readLeads();
+    
+    const newLead = {
+      id: Date.now().toString(),
+      name,
+      phone,
+      city,
+      reason: reason || "",
+      status: "new",
+      source: "website",
+      createdAt: new Date().toISOString(),
+    };
 
-  if (!BOT_TOKEN || !CHAT_ID) {
-    console.error("Telegram env vars missing");
+    leads.unshift(newLead);
+    writeLeads(leads);
+
+    // Send Telegram notification
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+    if (BOT_TOKEN && CHAT_ID) {
+      const text = encodeURIComponent(
+        `🆕 Новая заявка!\n\n👤 Имя: ${name}\n📱 Телефон: ${phone}\n🏙️ Город: ${city}\n💬 Причина: ${reason || "Не указано"}`
+      );
+
+      try {
+        await fetch(
+          `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${text}`
+        );
+      } catch (tgError) {
+        console.error("Telegram error:", tgError);
+      }
+    }
+
+    return NextResponse.json({ 
+      ok: true, 
+      leadId: newLead.id,
+      message: "Заявка успешно отправлена" 
+    });
+  } catch (error: any) {
+    console.error("Error:", error);
     return NextResponse.json(
-      { error: "Telegram configuration missing" },
+      { error: "Server error", details: error.message },
       { status: 500 }
     );
   }
+}
 
-  // 4️⃣ Формируем сообщение
-  const text = encodeURIComponent(
-    `🟢 Новый лид\nИмя: ${name}\nТелефон: ${phone}\nГород: ${city ?? "—"}`
-  );
-
-  // 5️⃣ URL Telegram‑API
-  const tgUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${text}`;
-
+export async function GET(req: Request) {
   try {
-    // ↑ Устанавливаем больший таймаут (30 сек) через AbortController
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000); // 30 сек
-
-    const tgRes = await fetch(tgUrl, {
-      method: "GET",
-      signal: controller.signal,
+    const leads = readLeads();
+    return NextResponse.json({
+      leads,
+      total: leads.length,
     });
-    clearTimeout(timeout); // успел ответ – отменяем таймер
-
-    const tgData = await tgRes.json();
-
-    if (!tgRes.ok) {
-      console.error("Telegram error:", tgData);
-      return NextResponse.json(
-        { error: "Telegram API error", details: tgData },
-        { status: 502 }
-      );
-    }
-
-    // Всё ОК → отвечаем клиенту
-    return NextResponse.json({ ok: true });
-  } catch (err: any) {
-    // Обрабатываем сетевые ошибки (в том числе timeout)
-    if (err.name === "AbortError") {
-      console.error("Telegram request timed out");
-      return NextResponse.json(
-        { error: "Telegram request timed out" },
-        { status: 504 }
-      );
-    }
-    console.error("Telegram request failed:", err);
+  } catch (error: any) {
     return NextResponse.json(
-      { error: "Telegram request failed", details: err.message },
-      { status: 502 }
+      { error: "Server error", details: error.message },
+      { status: 500 }
     );
   }
 }

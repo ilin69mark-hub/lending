@@ -1,18 +1,512 @@
+## 📂 Полный обзор текущего проекта (отфильтрованный список)
 
-C:\Users\asus\Desktop\landing
-├── app
-├── components
-├── data
-├── lib
-├── node_modules
-├── package-lock.json
-├── package.json
-├── public
-├── structure.txt
-└── styles
+Ниже перечислены **все файлы, которые остались** после удаления лишних.  
+Для каждого указано, **за что отвечает**, и **какую роль играет** в проекте. Это поможет быстро находить нужный код, менять UI, подключать базу данных и т.д.
 
-directory: 7 file: 3
+---
 
+### 🌳 1️⃣ Корневой уровень (root)
 
+| Файл / Папка | Что делает |
+|--------------|-----------|
+| **`.env.local`** | Локальные переменные окружения (например, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`). **Не коммитится**. |
+| **`.gitignore`** | Список файлов/папок, которые не идут в репозиторий (`node_modules/`, `.next/`, `*.env*`, `data/lead.db`). |
+| **`.next/`** | Сгенерированные артефакты сборки (манифесты, chunks, кэш). **Не редактировать**. |
+| **`.vercel/`** | Конфиги Vercel (проект ID, README). |
+| **`.vscode/settings.json`** | Настройки VS Code для данного проекта (например, `typescript.tsdk`). |
+| **`app/`** | **App Router** (Next 13). Содержит страницы, API‑руты, глобальные стили, layout. |
+| **`components/`** | Папка с переиспользуемыми React‑компонентами (UI‑блоки). |
+| **`data/`** | Статические данные проекта (массив городов). |
+| **`global.d.ts`** | Глобальные типы (например, объявление `*.css`‑модулей). |
+| **`lib/utils.ts`** | Утилиты: работа с SQLite (создание БД, функции `insertLead`, `getLeads`). |
+| **`next-env.d.ts`** | Автоматически генерируемый тип‑деклар для Next + TypeScript. |
+| **`package.json`** | Зависимости (`next`, `react`, `react‑leaflet`, `leaflet`, `better‑sqlite3`, `tailwindcss` и пр.) + скрипты (`dev`, `build`, `start`). |
+| **`package-lock.json`** | Зафиксированные версии зависимостей. |
+| **`README`** | Описание проекта, инструкции. |
+| **`styles/tailwind.css`** | Главный файл импорта Tailwind (`@tailwind base; @tailwind components; @tailwind utilities;`). |
+| **`tailwind.config.js`** | Конфигурация Tailwind (контент‑пути, кастомные цвета, плагины). |
+| **`tsconfig.json`** | Настройки TypeScript (`baseUrl`, `paths`, `moduleResolution: "node"` и др.). |
+| **`vercel.json`** | Конфиг Vercel (по‑умолчанию `framework: "next"`). |
+| **`project_structure.txt`, `structure.txt`** | Текстовые файлы с описанием структуры (можно удалить). |
 
-[2K[1G
+---
+
+### 📂 2️⃣ Папка **`app/`** – Next 13 App Router
+
+| Файл | Что делает |
+|------|------------|
+| **`app/layout.tsx`** | **Root Layout** – оборачивает всё приложение. Подключает глобальные стили (`import "./globals.css"`), задает `<html lang="ru">`, `<body>` с базовыми классами (`bg-white`, `antialiased`). |
+| **`app/page.tsx`** | **Главная страница** (`/`). Состоит из: <br>1️⃣ `Hero` (баннер) <br>2️⃣ `MapBlock` (карта) <br>3️⃣ `Income` (доходность) <br>4️⃣ `Infographic` (три инфо‑блока) <br>5️⃣ `Features` (преимущества) <br>6️⃣ `Form` (заявка). Использует `useState` для выбранного города => передаёт в форму. |
+| **`app/api/lead/route.ts`** | **API‑рут** (`/api/lead`). При POST‑запросе получает `{name, phone, city}` → проверяет данные → вставляет запись в SQLite (`insertLead`). Возвращает `{ ok: true, id }` или ошибку. |
+| **`app/globals.css`** | Глобальные CSS‑правила: импорт Tailwind (`@tailwind …`), импорт Leaflet (`@import "leaflet/dist/leaflet.css"`), любые кастомные стили. |
+| **`app/*.ts`** (нет остальных) | В случае необходимости создаются дополнительные страницы (`app/about/page.tsx`, `app/contact/page.tsx` и т.д.). |
+
+---
+
+### 📂 3️⃣ Папка **`components/`** – UI‑блоки
+
+| Компонент | Файл | Что отображает |
+|-----------|------|----------------|
+| **Hero** | `components/Hero.tsx` | Большой баннер с заголовком, подзаголовком и CTA‑кнопкой, скроллящей к карте. |
+| **MapBlock** | `components/MapBlock.tsx` | Обертка над `Map`, использует `dynamic`‑импорт без SSR, принимает `onSelectCity`‑callback. |
+| **Map** | `components/Map.tsx` | Интерактивная карта Leaflet: маркеры городов из `data/cities.ts`, подсказка, клик → вызывается `onSelectCity`. |
+| **Income** | `components/Income.tsx` | Блок с цифрами доходности (ROI, оборот, минимум вложения). |
+| **Infographic** | `components/Infographic.tsx` | Трёхколоночный блок с иконками/картинками (ROI, дилеры, инвестиция). |
+| **Features** | `components/Features.tsx` | Сетка из трёх преимуществ (Контроль, Аналитика, Поддержка). |
+| **Form** | `components/Form.tsx` | Форма заявки: поля **Имя** и **Телефон**, отображает выбранный город, отправляет POST в `/api/lead`, показывает статус (`loading`, `success`, `error`). |
+| **(другие)** | любые `*.tsx` в папке | Добавляйте новые UI‑блоки, импортируйте их в `app/page.tsx`. |
+
+---
+
+### 📂 4️⃣ Папка **`data/`** – статические данные
+
+| Файл | Содержимое |
+|------|------------|
+| **`data/cities.ts`** | Экспортирует массив `cities: City[]`. Каждый объект: `{ id, name, coords: [lat, lng], status: "free" | "taken" }`. Используется в `Map` для отрисовки маркеров. |
+
+---
+
+### 📂 5️⃣ Папка **`lib/`** – бизнес‑логика, работа с БД
+
+| Файл | Что делает |
+|------|------------|
+| **`lib/utils.ts`** | Открывает/создаёт SQLite‑файл `data/lead.db`. <br>Функция `insertLead({name, phone, city})` → вставка записи. <br>Функция `getLeads()` → возврат всех заявок. |
+| (может быть `db.ts` – то же самое) | Позволяет из API‑рута сохранять заявки локально. |
+
+---
+
+### 📂 6️⃣ Папка **`styles/`** – CSS‑файлы
+
+| Файл | Содержимое |
+|------|------------|
+| **`styles/tailwind.css`** | `@tailwind base; @tailwind components; @tailwind utilities;` – основной файл Tailwind, импортируется в `app/layout.tsx`. |
+| (может быть `globals.css` в `app/`) | Подключает также Leaflet стили. |
+
+---
+
+### 📂 7️⃣ Папка **`.next/`** – артефакты сборки (игнорируются Git)
+
+| Что хранит |
+|------------|
+| Сгенерированные манифесты, chunks, кэш, готовый HTML/JS‑код. |
+| При `npm run dev`/`npm run build` пересоздаётся автоматически. |
+
+---
+
+### 📂 8️⃣ Папка **`.vercel/`** – конфиги Vercel (не обязательны при локальном запуске)
+
+| Файл |
+|------|
+| `project.json` – ID проекта Vercel. |
+| `README.txt` – справка. |
+
+---
+
+## 🛠️ Как работать с текущей структурой
+
+### 1️⃣ Добавление/изменение UI‑блока  
+1. **Создайте новый файл** в `components/`, например `Testimonials.tsx`.  
+2. **Экспортируйте** `default`‑компонент.  
+3. **Импортируйте** в `app/page.tsx`:  
+
+   ```tsx
+   import Testimonials from "@/components/Testimonials";
+   ```
+
+4. **Вставьте** в нужное место внутри `return` функции `Page`.  
+
+### 2️⃣ Работа с выбранным городом  
+
+- В `app/page.tsx` хранится состояние:  
+
+  ```tsx
+  const [selectedCity, setSelectedCity] = useState<string>("");
+  ```
+
+- `MapBlock` получает `onSelectCity={setSelectedCity}` → при клике в карте вызывается `setSelectedCity(cityName)`.  
+- `Form` получает `selectedCity` и отображает её рядом с полями.
+
+### 3️⃣ Обновление списка городов  
+
+- Откройте `data/cities.ts`.  
+- Добавьте/удалите объект:
+
+  ```ts
+  export const cities: City[] = [
+    { id: 1, name: "Москва", coords: [55.75, 37.62], status: "free" },
+    // новый город:
+    { id: 5, name: "Новосибирск", coords: [55.008, 82.935], status: "free" },
+  ];
+  ```
+
+- Сохраните – карта автоматически отобразит новые маркеры (если перезапустить dev‑сервер).
+
+### 4️⃣ Сохранение заявки в БД  
+
+- **API‑рут** `app/api/lead/route.ts` вызывает `insertLead` из `lib/utils.ts`.  
+- При первой записи автоматически создаётся файл БД `data/lead.db`.  
+- Чтобы увидеть запись:  
+
+  ```bash
+  sqlite3 data/lead.db "SELECT * FROM leads ORDER BY id DESC LIMIT 5;"
+  ```
+
+- Если хотите добавить поле, просто измените таблицу в `lib/utils.ts` и мигрируйте (пересоздайте файл БД).
+
+### 5️⃣ Добавление аналитики  
+
+- В `app/layout.tsx` добавьте скрипт Google Analytics / Yandex Metrika в `<head>`:  
+
+  ```tsx
+  <head>
+    {/* GA */}
+    <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}></script>
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+        `,
+      }}
+    />
+  </head>
+  ```
+
+- Для отслеживания кликов по карте можно в `Map.tsx` добавить:
+
+  ```tsx
+  if (typeof gtag === "function") {
+    // @ts-ignore
+    gtag('event', 'city_click', {
+      city: city.name,
+      status: city.status,
+    });
+  }
+  ```
+
+### 6️⃣ Перезапуск проекта
+
+```bash
+# Запуск в режиме разработки (горячая перезагрузка)
+npm run dev
+
+# Сборка Production (для проверки final build)
+npm run build && npm start
+```
+
+---
+
+## 📦 Быстрый чек‑лист готовности к локальному запуску
+
+| ✅ | Проверка |
+|----|----------|
+| **Зависимости** | `npm i` без ошибок. |
+| **Dev‑сервер** | `npm run dev` → `http://localhost:3000` открывается, все блоки видны. |
+| **Карта** | Маркеры отображаются, клики работают, выбранный город передаётся в форму. |
+| **Форма** | При отправке появляется статус (`Loading…` → `Success`), запрос к `/api/lead` возвращает 200. |
+| **БД** | После отправки заявки `data/lead.db` содержит запись (`sqlite3 data/lead.db "SELECT * FROM leads"`). |
+| **Инфографика** | Блок `Infographic` отображается (иконки/картинки). |
+| **Текст/CTA** | Заголовки, подзаголовки и кнопки читаемы, стили применены (Tailwind). |
+| **Тесты** (если есть) | `npm run test` (или `cypress`) проходят. |
+
+---
+
+## 🎯 Что дальше (по вашему плану)
+
+1. **Доработать тексты и стили** – поменяйте строки в `components/*.tsx`.  
+2. **Подготовить инфографику** – положите изображения в `public/images/` и укажите пути в `Infographic.tsx`.  
+3. **Отладить базу** – проверьте `lib/utils.ts`, удостоверьтесь, что записи сохраняются корректно.  
+4. **(Опционально) Добавить админ‑страницу** – `app/admin/page.tsx` с таблицей всех лидов (`getLeads()`), защита через Basic Auth или токен.  
+5. **Интегрировать аналитику** – скрипты в `app/layout.tsx`, события в `Map`, `Form`.  
+
+Если понадобится более детальная инструкция или пример кода для любого из пунктов — дайте знать, пришлю готовый файл/фрагмент.  
+
+**Удачной работы!** 🚀✨  ## 📂 Полный и упрощённый обзор вашего проекта  
+
+Ниже перечислены **все оставшиеся файлы** после очистки и их **назначение**. Структура разделена на логические группы (корень, `app/`, `components/`, `data/`, `lib/`, стили и служебные файлы).  
+
+---
+
+### 1️⃣ Корень проекта  
+
+| Файл / Папка | Что делает |
+|--------------|-----------|
+| **`.env.local`** | Локальные переменные окружения (например, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`). **Не коммитится**. |
+| **`.gitignore`** | Список файлов/папок, игнорируемых Git (`node_modules/`, `.next/`, `*.env*`, `data/lead.db`). |
+| **`.next/`** | Сгенерированные артефакты сборки (манифесты, chunks, кэш). **Не правьте**. |
+| **`.vercel/`** | Конфиги Vercel (`project.json`). |
+| **`.vscode/settings.json`** | Настройки VS Code (например, путь к TypeScript). |
+| **`app/`** | **App Router** – основные страницы, API‑руты, глобальные стили, layout. |
+| **`components/`** | Переиспользуемые UI‑компоненты (Hero, Map, Form и т.д.). |
+| **`data/`** | Статические данные проекта (массив городов). |
+| **`global.d.ts`** | Глобальные типы (например, `declare module "*.css"`). |
+| **`lib/utils.ts`** | Утилиты работы с SQLite (создаёт `data/lead.db`, функции `insertLead` и `getLeads`). |
+| **`next-env.d.ts`** | Автогенерируемый тип‑деклар для Next + TypeScript. |
+| **`package.json`** | Зависимости (`next`, `react`, `react‑leaflet`, `leaflet`, `better‑sqlite3`, `tailwindcss`), скрипты (`dev`, `build`, `start`). |
+| **`package-lock.json`** | Зафиксированные версии зависимостей. |
+| **`README`** | Описание проекта, инструкции. |
+| **`styles/tailwind.css`** | Главный файл импорта Tailwind (`@tailwind base; @tailwind components; @tailwind utilities;`). |
+| **`tailwind.config.js`** | Конфигурация Tailwind (контент‑пути, кастомные цвета). |
+| **`tsconfig.json`** | Настройки TypeScript (`baseUrl`, `paths`, `moduleResolution: "node"` и др.). |
+| **`vercel.json`** | Конфиг Vercel (по‑умолчанию `framework: "next"`). |
+| **`project_structure.txt`, `structure.txt`** | Текстовые описания структуры (можно удалить). |
+
+---
+
+### 2️⃣ Папка `app/` – **App Router** (Next 13)
+
+| Файл | Что делает |
+|------|-----------|
+| **`app/layout.tsx`** | **Root Layout** – оборачивает всё приложение, подключает глобальные стили (`import "./globals.css"`), задает `<html lang="ru">`, `<body className="bg-white antialiased">`. |
+| **`app/page.tsx`** | **Главная страница (`/`).** Содержит последовательность UI‑блоков: `Hero`, `MapBlock`, `Income`, `Infographic`, `Features`, `Form`. Хранит состояние выбранного города (`useState`). |
+| **`app/api/lead/route.ts`** | **API‑рут** (`/api/lead`). При POST‑запросе получает `{ name, phone, city }`, сохраняет запись в SQLite (`insertLead`), возвращает `{ ok: true, id }` или ошибку. |
+| **`app/globals.css`** | Глобальные стили: импорт Tailwind (`@tailwind …`), импорт Leaflet (`@import "leaflet/dist/leaflet.css"`), любые кастомные правила. |
+
+---
+
+### 3️⃣ Папка `components/` – **переиспользуемые UI‑компоненты**
+
+| Компонент | Файл | Что отображает |
+|-----------|------|----------------|
+| **Hero** | `components/Hero.tsx` | Баннер с крупным заголовком, подзаголовком и крупной CTA‑кнопкой (скролл к карте). |
+| **MapBlock** | `components/MapBlock.tsx` | Обёртка над `Map` (dynamic import без SSR), принимает `onSelectCity`‑callback, передаёт в `Map`. |
+| **Map** | `components/Map.tsx` | Интерактивная карта Leaflet: маркеры из `data/cities.ts`, подсказки, клик → вызывает `onSelectCity`. |
+| **Income** | `components/Income.tsx` | Блок с цифрами доходности (ROI, оборот, минимальная инвестиция). |
+| **Infographic** | `components/Infographic.tsx` | Трёхколоночный блок с иконками/картинками (ROI, дилеры, инвестиция). |
+| **Features** | `components/Features.tsx` | Сетка из трёх преимуществ (Контроль, Аналитика, Поддержка). |
+| **Form** | `components/Form.tsx` | Форма заявки: поля **Имя**, **Телефон**, отображение выбранного города, отправка POST‑запроса в `/api/lead`, статус‑сообщения (`loading`, `success`, `error`). |
+| **(другие)** | любые `*.tsx` в этой папке | Добавляйте новые UI‑блоки, импортируя их в `app/page.tsx`. |
+
+---
+
+### 4️⃣ Папка `data/` – **статические данные**
+
+| Файл | Что содержит |
+|------|---------------|
+| **`data/cities.ts`** | Экспортирует массив `cities: City[]`. Каждый объект: `{ id, name, coords: [lat, lng], status: "free" | "taken" }`. Используется в `Map` для генерации маркеров. |
+
+---
+
+### 5️⃣ Папка `lib/` – **утилиты и работа с БД**
+
+| Файл | Что делает |
+|------|-----------|
+| **`lib/utils.ts`** | Открывает/создаёт SQLite‑файл `data/lead.db`. <br>**`insertLead({name, phone, city})`** – вставка новой заявки. <br>**`getLeads()`** – вернуть все заявки (для админ‑страницы). |
+
+---
+
+### 6️⃣ Папка `styles/` – **CSS / Tailwind**
+
+| Файл | Что содержит |
+|------|--------------|
+| **`styles/tailwind.css`** | Основной файл импорта Tailwind (`@tailwind base; @tailwind components; @tailwind utilities;`). Подключается в `app/layout.tsx` (через `import "./globals.css"`). |
+
+---
+
+### 7️⃣ Служебные файлы
+
+| Файл | Что делает |
+|------|-----------|
+| **`.next/`** | Сгенерированные артефакты сборки (не редактировать). |
+| **`.vercel/`** | Конфиги Vercel (проекты, ссылки). |
+| **`.vscode/settings.json`** | Настройки VS Code (например, путь к локальному TypeScript). |
+| **`next-env.d.ts`** | Автоматический тип‑деклар для Next + TypeScript. |
+| **`project_structure.txt`, `structure.txt`** | Текстовое описание структуры (можно удалить). |
+
+---
+
+## 🔧 Как редактировать / добавлять новые блоки
+
+### Добавление UI‑компонента
+
+1. **Создайте файл** в `components/`, например `Testimonials.tsx`.  
+2. **Экспортируйте** `default`‑компонент:  
+
+   ```tsx
+   export default function Testimonials() {
+     return (
+       <section className="py-20 bg-gray-50">
+         <h2 className="text-3xl font-semibold text-center mb-6">Отзывы клиентов</h2>
+         <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+           <blockquote className="p-4 border rounded bg-white">
+             <p className="italic">“Отличный доход уже через месяц!”</p>
+             <footer className="mt-2 text-right">— Иван, Москва</footer>
+           </blockquote>
+           <blockquote className="p-4 border rounded bg-white">
+             <p className="italic">“Поддержка на всех этапах спасла бизнес.”</p>
+             <footer className="mt-2 text-right">— Ольга, СПб</footer>
+           </blockquote>
+         </div>
+       </section>
+     );
+   }
+   ```
+
+3. **Импортируйте** в `app/page.tsx`:  
+
+   ```tsx
+   import Testimonials from "@/components/Testimonials";
+   ```
+
+4. **Вставьте** JSX‑элемент в нужное место внутри `return`:
+
+   ```tsx
+   <Features />
+   <Testimonials />
+   <Form selectedCity={selectedCity} />
+   ```
+
+### Обновление списка городов
+
+- Откройте `data/cities.ts`.  
+- Добавьте/удалите объект:
+
+  ```ts
+  export const cities: City[] = [
+    { id: 1, name: "Москва", coords: [55.751244, 37.618423], status: "free" },
+    { id: 5, name: "Новосибирск", coords: [55.008, 82.935], status: "free" },
+  ];
+  ```
+
+- Сохраните – карта автоматически покажет новые маркеры (перезапустите dev‑сервер при необходимости).
+
+### Добавление новой таблицы/полей в SQLite
+
+1. Откройте `lib/utils.ts`.  
+2. В блоке **инициализации** добавьте новые колонки в `CREATE TABLE` (например, `email TEXT`).  
+3. Перезапустите приложение – при первом запуске таблица будет пересоздана с новыми колонками.  
+4. Обновите функцию `insertLead` для вставки новых значений.  
+
+### Добавление аналитики (Google Analytics / Яндекс Метрика)
+
+1. В `app/layout.tsx` внутри `<head>` добавьте скрипт GA:
+
+   ```tsx
+   <head>
+     <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}></script>
+     <script
+       dangerouslySetInnerHTML={{
+         __html: `
+           window.dataLayer = window.dataLayer || [];
+           function gtag(){dataLayer.push(arguments);}
+           gtag('js', new Date());
+           gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+         `,
+       }}
+     />
+   </head>
+   ```
+
+2. Для отслеживания кликов по городам в `Map.tsx`:
+
+   ```tsx
+   // после выбора города
+   if (typeof gtag === "function") {
+     // @ts-ignore
+     gtag('event', 'city_click', {
+       city: city.name,
+       status: city.status,
+     });
+   }
+   ```
+
+3. Добавьте переменные `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_YM_ID` в `.env.local`.
+
+### Добавление админ‑страницы (просмотр лидов)
+
+1. Создайте файл `app/admin/page.tsx`.  
+2. Импортируйте `getLeads` из `lib/utils.ts`.  
+3. Выведите таблицу:
+
+   ```tsx
+   import { getLeads } from "@/lib/utils";
+
+   export const metadata = { title: "Admin – лиды" };
+
+   export default async function AdminPage() {
+     const leads = await getLeads();
+
+     return (
+       <section className="p-8 max-w-4xl mx-auto">
+         <h1 className="text-2xl font-bold mb-6">Список заявок</h1>
+         {leads.length === 0 ? (
+           <p>Пока заявок нет.</p>
+         ) : (
+           <table className="w-full border-collapse">
+             <thead className="bg-gray-100">
+               <tr>
+                 <th className="border p-2">ID</th>
+                 <th className="border p-2">Имя</th>
+                 <th className="border p-2">Телефон</th>
+                 <th className="border p-2">Город</th>
+                 <th className="border p-2">Дата</th>
+               </tr>
+             </thead>
+             <tbody>
+               {leads.map((lead) => (
+                 <tr key={lead.id} className="text-center">
+                   <td className="border p-2">{lead.id}</td>
+                   <td className="border p-2">{lead.name}</td>
+                   <td className="border p-2">{lead.phone}</td>
+                   <td className="border p-2">{lead.city || "—"}</td>
+                   <td className="border p-2">{lead.created_at}</td>
+                 </tr>
+               ))}
+             </tbody>
+           </table>
+         )}
+       </section>
+     );
+   }
+   ```
+
+4. При желании защитите роут (Basic Auth, токен в `.env.local`).
+
+---
+
+## 🚀 Как запускать в локальном режиме
+
+```bash
+# 1️⃣ Установите зависимости (один раз)
+npm i
+
+# 2️⃣ Запустите dev‑сервер
+npm run dev   # http://localhost:3000
+
+# 3️⃣ (Опционально) Сборка production и запуск
+npm run build && npm start
+```
+
+- При изменении файлов компонент будет **горячо перезагружаться** (HMR).  
+- Если меняете `app/api/lead/route.ts` или `lib/utils.ts`, сервер также перезапустится.
+
+---
+
+## 📋 Чек‑лист готовности к локальному запуску
+
+| ✅ | Проверка |
+|----|-----------|
+| **Зависимости** | `npm i` без ошибок. |
+| **Dev‑сервер** | `npm run dev` → страница открывается без 404. |
+| **Карта** | Маркеры отображаются, клик по свободному городу показывает кнопку и скроллит к форме. |
+| **Форма** | При отправке появляется статус `loading → success`. Запрос к `/api/lead` получает 200. |
+| **База данных** | После отправки в `data/lead.db` появляется запись (`sqlite3 data/lead.db "SELECT * FROM leads;"`). |
+| **Инфографика** | Блок `Infographic` виден, изображения корректно загружаются. |
+| **Тексты / кнопки** | Заголовки, подзаголовки, CTA‑кнопки читаемы, стили Tailwind применяются. |
+| **Доп. функционал** | (Опционально) админ‑страница, аналитика, новые компоненты – протестированы. |
+
+---
+
+## 🎯 Что делать дальше (по вашему плану)
+
+1. **Редактировать тексты и стили** – правьте файлы в `components/`.  
+2. **Добавить инфографику** – положите PNG/SVG в `public/images/` и укажите путь в `Infographic.tsx`.  
+3. **Тестировать форму** – убедитесь, что заявки записываются в SQLite.  
+4. **При желании добавить админ‑страницу** – использовать пример выше.  
+5. **Подключить аналитику** – добавить скрипты в `app/layout.tsx`.  
+
+Если понадобится **конкретный пример кода** (например, дополнительный API‑рут, миграция БД, защита админ‑страницы), дайте знать – пришлю готовый файл.  
+
+**Удачной разработки!** 🚀✨  
